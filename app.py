@@ -15,7 +15,7 @@ def load_models():
         "Linear Regression": {"model": joblib.load("model_linear.pkl"), "accuracy": 0.82},
         "Random Forest": {"model": joblib.load("model_rf.pkl"), "accuracy": 0.85},
         "XGBoost": {"model": joblib.load("model_xgb.pkl"), "accuracy": 0.87},
-        "CatBoost": {"model": joblib.load("model_cat.pkl"), "accuracy": 0.86},
+        "MLP": {"model": joblib.load("model_mlp.pkl"), "accuracy": 0.86},
     }
     return models
 
