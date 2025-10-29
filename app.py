@@ -122,9 +122,26 @@ def input_section(label, cols):
             with c[idx]:
                 val = st.session_state.get(col_name, 0.5)
                 inputs[col_name] = st.number_input(
-                    col_name, min_value=0.0, max_value=1.0, value=val, step=0.01, key=col_name
+                    col_name, min_value=0.0, max_value=100.0, value=val, step=0.01, key=col_name
                 )
     return inputs
+
+def time_inputs():
+    st.markdown("### Time Features")
+    inputs = {}
+    c1, c2 = st.columns(2)
+    with c1:
+        val = st.session_state.get('day', 1)
+        inputs['day'] = st.number_input("Day", min_value=1, max_value=31, value=val, step=1, key='day')
+    with c2:
+        val = st.session_state.get('month', 1)
+        inputs['month'] = st.number_input("Month", min_value=1, max_value=12, value=val, step=1, key='month')
+    return inputs
+
+time_input = time_inputs()
+
+# Always set pid to 0
+pid_input = {'pid': 0}
 
 # --- Sidebar controls ---
 st.sidebar.header("Controls")
@@ -142,17 +159,21 @@ with col1:
     screen_inputs = input_section("Screen", screen_cols)
     steps_inputs = input_section("Steps", steps_cols)
 
+# --- Combine all inputs ---
+all_inputs = {**pid_input, **time_input, **sleep_inputs, **bluetooth_inputs, **call_inputs,
+              **location_inputs, **screen_inputs, **steps_inputs}
+
 # --- Randomize values ---
 if randomize:
-    for key in list(st.session_state.keys()):
-        if key not in ["Predict Sleep Duration", "Randomize All"]:
-            st.session_state[key] = np.round(np.random.uniform(0.0, 1.0), 2)
+    for key in all_inputs:
+        if key not in ['pid']:  # pid stays 0
+            if key in ['day']:
+                st.session_state[key] = np.random.randint(1, 32)
+            elif key in ['month']:
+                st.session_state[key] = np.random.randint(1, 13)
+            else:
+                st.session_state[key] = np.round(np.random.uniform(0.0, 100.0), 2)
     st.experimental_rerun()
-
-
-# --- Combine all inputs ---
-all_inputs = {**sleep_inputs, **bluetooth_inputs, **call_inputs, **location_inputs, **screen_inputs, **steps_inputs}
-
 
 # --- Prediction ---
 if predict:
