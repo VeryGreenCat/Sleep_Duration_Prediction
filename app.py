@@ -3,10 +3,10 @@ import pandas as pd
 import numpy as np
 import joblib
 
-st.set_page_config(page_title="Sleep Duration Predictor", layout="wide")
+# st.set_page_config(page_title="Sleep Duration Predictor", layout="wide")
 
-st.title("Sleep Duration Prediction App")
-st.markdown("Predict your sleep duration based on daily activity, location, and phone usage patterns.")
+# st.title("Sleep Duration Prediction App")
+# st.markdown("Predict your sleep duration based on daily activity, location, and phone usage patterns.")
 
 # --- Load models ---
 @st.cache_resource
@@ -103,24 +103,38 @@ steps_cols = [
     'f_steps:fitbit_steps_intraday_rapids_sumdurationactivebout:night',
 ]
 
-# time features should be in range 1-31 for day and 1-12 for month with no floats values
-time = ['day', 'month']
-
-
-#--------------------- start fix here ---------------------
-# ['pid'] not included as input feature but always set as 0
-# --- Input widgets (two per row, inline) ---
 # --- Sidebar controls ---
 st.sidebar.header("Controls")
 randomize = st.sidebar.button("Randomize All")
 predict = st.sidebar.button("Predict Sleep Duration")
 
+# --- Initialize session_state defaults ---
+all_feature_keys = sleep_cols + bluetooth_cols + call_cols + location_cols + screen_cols + steps_cols + ['day', 'month', 'pid']
+for key in all_feature_keys:
+    if key not in st.session_state:
+        if key == 'pid':
+            st.session_state[key] = 0
+        elif key in ['day', 'month']:
+            st.session_state[key] = 1
+        else:
+            st.session_state[key] = 0.5
+
+# --- Randomize values ---
+if randomize:
+    for key in st.session_state:
+        if key == 'day':
+            st.session_state[key] = np.random.randint(1, 32)
+        elif key == 'month':
+            st.session_state[key] = np.random.randint(1, 13)
+        elif key != 'pid':
+            st.session_state[key] = np.round(np.random.uniform(0, 100), 2)
+
+# --- Input widgets ---
 def input_section(label, cols):
     st.markdown(f"### {label}")
     inputs = {}
-    num_cols = 3  # inputs per row
+    num_cols = 3
     rows = [cols[i:i + num_cols] for i in range(0, len(cols), num_cols)]
-
     for row in rows:
         c = st.columns(num_cols)
         for idx, col_name in enumerate(row):
@@ -131,48 +145,28 @@ def input_section(label, cols):
                 )
     return inputs
 
+# --- Day and Month inputs ---
 def time_inputs():
     st.markdown("### Time Features")
     inputs = {}
     c1, c2 = st.columns(2)
     with c1:
-        val = st.session_state.get('day', 1)
-        inputs['day'] = st.number_input("Day", min_value=1, max_value=31, value=val, step=1, key='day')
+        inputs['day'] = st.number_input("Day", min_value=1, max_value=31, value=st.session_state['day'], key='day')
     with c2:
-        val = st.session_state.get('month', 1)
-        inputs['month'] = st.number_input("Month", min_value=1, max_value=12, value=val, step=1, key='month')
+        inputs['month'] = st.number_input("Month", min_value=1, max_value=12, value=st.session_state['month'], key='month')
     return inputs
 
-# --- Randomize values first ---
-if randomize:
-    for key in sleep_cols + bluetooth_cols + call_cols + location_cols + screen_cols + steps_cols:
-        st.session_state[key] = np.round(np.random.uniform(0.0, 100.0), 2)
-    st.session_state['day'] = np.random.randint(1, 32)
-    st.session_state['month'] = np.random.randint(1, 13)
-    st.experimental_rerun()
+# --- Build input sections ---
+sleep_inputs = input_section("Sleep", sleep_cols)
+bluetooth_inputs = input_section("Bluetooth", bluetooth_cols)
+call_inputs = input_section("Call", call_cols)
+location_inputs = input_section("Location", location_cols)
+screen_inputs = input_section("Screen", screen_cols)
+steps_inputs = input_section("Steps", steps_cols)
+time_input = time_inputs()  # day & month
 
-# --- Input sections after session_state is set ---
-time_input = time_inputs()
-
-# Always set pid to 0
-pid_input = {'pid': 0}
-
-
-
-# --- Input sections ---
-col1, = st.columns(1)
-
-with col1:
-    sleep_inputs = input_section("Sleep", sleep_cols)
-    bluetooth_inputs = input_section("Bluetooth", bluetooth_cols)
-    call_inputs = input_section("Call", call_cols)
-    location_inputs = input_section("Location", location_cols)
-    screen_inputs = input_section("Screen", screen_cols)
-    steps_inputs = input_section("Steps", steps_cols)
-
-# --- Combine all inputs ---
-all_inputs = {**pid_input, **time_input, **sleep_inputs, **bluetooth_inputs, **call_inputs,
-              **location_inputs, **screen_inputs, **steps_inputs}
+# --- Combine all inputs from session_state ---
+all_inputs = {key: st.session_state[key] for key in all_feature_keys}
 
 # --- Prediction ---
 if predict:
@@ -180,8 +174,11 @@ if predict:
     st.markdown("### 🧾 Model Predictions")
     results = []
     for name, info in models.items():
-        pred = info["model"].predict(input_df)[0]
-        results.append((name, round(pred, 2), info["accuracy"]))
+        try:
+            pred = info["model"].predict(input_df)[0]
+        except Exception as e:
+            pred = f"Error: {e}"
+        results.append((name, round(pred, 2) if isinstance(pred, (float, np.float64)) else pred, info["accuracy"]))
 
     result_df = pd.DataFrame(results, columns=["Model", "Predicted Sleep Duration (hrs)", "Accuracy"])
     st.table(result_df)
