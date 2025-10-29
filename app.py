@@ -5,15 +5,15 @@ import joblib
 
 st.set_page_config(page_title="Sleep Duration Predictor", layout="wide")
 
-st.title("😴 Sleep Duration Prediction App")
+st.title("Sleep Duration Prediction App")
 st.markdown("Predict your sleep duration based on daily activity, location, and phone usage patterns.")
 
 # --- Load models ---
 @st.cache_resource
 def load_models():
     models = {
-        "Linear Regression": {"model": joblib.load("model_linear.pkl"), "accuracy": 0.82},
-        "Random Forest": {"model": joblib.load("model_rf.pkl"), "accuracy": 0.85},
+        "Linear Regression": {"model": joblib.load("model_lin.pkl"), "accuracy": 0.82},
+        "Random Forest": {"model": joblib.load("model_tree.pkl"), "accuracy": 0.85},
         "XGBoost": {"model": joblib.load("model_xgb.pkl"), "accuracy": 0.87},
         "MLP": {"model": joblib.load("model_mlp.pkl"), "accuracy": 0.86},
     }
@@ -23,114 +23,122 @@ models = load_models()
 
 # --- Feature groups ---
 sleep_cols = [
-    "f_slp:fitbit_sleep_summary_rapids_avgefficiencymain_norm:allday",
-    "f_slp:fitbit_sleep_summary_rapids_sumdurationasleepmain_norm:allday",
+    'f_slp:fitbit_sleep_summary_rapids_avgefficiencymain:allday',
+    'f_slp:fitbit_sleep_summary_rapids_avgefficiencymain_norm:allday',
 ]
 
 bluetooth_cols = [
-    "f_blue:phone_bluetooth_doryab_uniquedevicesall_norm:allday",
-    "f_blue:phone_bluetooth_doryab_uniquedevicesall_norm:afternoon",
-    "f_blue:phone_bluetooth_doryab_uniquedevicesall_norm:evening",
-    "f_blue:phone_bluetooth_doryab_uniquedevicesall_norm:morning",
+    'f_blue:phone_bluetooth_doryab_uniquedevicesall:morning',
+    'f_blue:phone_bluetooth_doryab_uniquedevicesall:afternoon',
+    'f_blue:phone_bluetooth_doryab_uniquedevicesall:evening',
+    'f_blue:phone_bluetooth_doryab_uniquedevicesall:night',
 ]
 
+call_cols = ['f_call:phone_calls_rapids_incoming_count:allday',
+    'f_call:phone_calls_rapids_outgoing_count:allday',
+    'f_call:phone_calls_rapids_outgoing_sumduration:allday',]
+
 location_cols = [
-    "f_loc:phone_locations_doryab_movingtostaticratio_norm:afternoon",
-    "f_loc:phone_locations_doryab_timeathome_norm:afternoon",
-    "f_loc:phone_locations_doryab_totaldistance_norm:afternoon",
-    "f_loc:phone_locations_locmap_duration_in_locmap_study_norm:afternoon",
-    "f_loc:phone_locations_locmap_duration_in_locmap_exercise_norm:afternoon",
-    "f_loc:phone_locations_locmap_duration_in_locmap_greens_norm:afternoon",
-    "f_loc:phone_locations_barnett_circdnrtn_norm:allday",
-    "f_loc:phone_locations_barnett_hometime_norm:allday",
-    "f_loc:phone_locations_barnett_rog_norm:allday",
-    "f_loc:phone_locations_barnett_siglocsvisited_norm:allday",
-    "f_loc:phone_locations_barnett_wkenddayrtn_norm:allday",
-    "f_loc:phone_locations_doryab_movingtostaticratio_norm:allday",
-    "f_loc:phone_locations_doryab_timeathome_norm:allday",
-    "f_loc:phone_locations_doryab_totaldistance_norm:allday",
-    "f_loc:phone_locations_locmap_duration_in_locmap_study_norm:allday",
-    "f_loc:phone_locations_locmap_duration_in_locmap_exercise_norm:allday",
-    "f_loc:phone_locations_locmap_duration_in_locmap_greens_norm:allday",
-    "f_loc:phone_locations_doryab_movingtostaticratio_norm:evening",
-    "f_loc:phone_locations_doryab_timeathome_norm:evening",
-    "f_loc:phone_locations_doryab_totaldistance_norm:evening",
-    "f_loc:phone_locations_locmap_duration_in_locmap_study_norm:evening",
-    "f_loc:phone_locations_locmap_duration_in_locmap_exercise_norm:evening",
-    "f_loc:phone_locations_locmap_duration_in_locmap_greens_norm:evening",
-    "f_loc:phone_locations_doryab_movingtostaticratio_norm:morning",
-    "f_loc:phone_locations_doryab_timeathome_norm:morning",
-    "f_loc:phone_locations_doryab_totaldistance_norm:morning",
-    "f_loc:phone_locations_locmap_duration_in_locmap_study_norm:morning",
-    "f_loc:phone_locations_locmap_duration_in_locmap_exercise_norm:morning",
-    "f_loc:phone_locations_locmap_duration_in_locmap_greens_norm:morning",
-    "f_loc:phone_locations_doryab_movingtostaticratio_norm:night",
-    "f_loc:phone_locations_doryab_timeathome_norm:night",
-    "f_loc:phone_locations_doryab_totaldistance_norm:night",
-    "f_loc:phone_locations_locmap_duration_in_locmap_study_norm:night",
-    "f_loc:phone_locations_locmap_duration_in_locmap_exercise_norm:night",
-    "f_loc:phone_locations_locmap_duration_in_locmap_greens_norm:night",
+    'f_loc:phone_locations_doryab_movingtostaticratio:afternoon',
+    'f_loc:phone_locations_doryab_timeathome:afternoon',
+    'f_loc:phone_locations_locmap_duration_in_locmap_study:afternoon',
+    'f_loc:phone_locations_locmap_duration_in_locmap_exercise:afternoon',
+    'f_loc:phone_locations_locmap_duration_in_locmap_greens:afternoon',
+    'f_loc:phone_locations_barnett_hometime:allday',
+    'f_loc:phone_locations_barnett_rog:allday',
+    'f_loc:phone_locations_barnett_siglocsvisited:allday',
+    'f_loc:phone_locations_barnett_wkenddayrtn:allday',
+    'f_loc:phone_locations_doryab_movingtostaticratio:allday',
+    'f_loc:phone_locations_doryab_timeathome:allday',
+    'f_loc:phone_locations_doryab_totaldistance:allday',
+    'f_loc:phone_locations_locmap_duration_in_locmap_study:allday',
+    'f_loc:phone_locations_locmap_duration_in_locmap_exercise:allday',
+    'f_loc:phone_locations_locmap_duration_in_locmap_greens:allday',
+    'f_loc:phone_locations_doryab_movingtostaticratio:evening',
+    'f_loc:phone_locations_doryab_totaldistance:evening',
+    'f_loc:phone_locations_locmap_duration_in_locmap_greens:evening',
+    'f_loc:phone_locations_doryab_timeathome:morning',
+    'f_loc:phone_locations_doryab_totaldistance:morning',
+    'f_loc:phone_locations_locmap_duration_in_locmap_study:morning',
+    'f_loc:phone_locations_doryab_movingtostaticratio:night',
+    'f_loc:phone_locations_doryab_timeathome:night',
+    'f_loc:phone_locations_doryab_totaldistance:night',
+    'f_loc:phone_locations_locmap_duration_in_locmap_exercise:night',
 ]
 
 screen_cols = [
-    "f_screen:phone_screen_rapids_countepisodeunlock_norm:afternoon",
-    "f_screen:phone_screen_rapids_sumdurationunlock_norm:afternoon",
-    "f_screen:phone_screen_rapids_sumdurationunlock_locmap_home_norm:afternoon",
-    "f_screen:phone_screen_rapids_countepisodeunlock_norm:allday",
-    "f_screen:phone_screen_rapids_sumdurationunlock_norm:allday",
-    "f_screen:phone_screen_rapids_sumdurationunlock_locmap_greens_norm:allday",
-    "f_screen:phone_screen_rapids_sumdurationunlock_locmap_living_norm:allday",
-    "f_screen:phone_screen_rapids_sumdurationunlock_locmap_study_norm:allday",
-    "f_screen:phone_screen_rapids_sumdurationunlock_locmap_home_norm:allday",
-    "f_screen:phone_screen_rapids_countepisodeunlock_norm:evening",
-    "f_screen:phone_screen_rapids_sumdurationunlock_norm:evening",
-    "f_screen:phone_screen_rapids_sumdurationunlock_locmap_living_norm:evening",
-    "f_screen:phone_screen_rapids_sumdurationunlock_locmap_home_norm:evening",
-    "f_screen:phone_screen_rapids_countepisodeunlock_norm:morning",
-    "f_screen:phone_screen_rapids_sumdurationunlock_norm:morning",
-    "f_screen:phone_screen_rapids_sumdurationunlock_locmap_home_norm:morning",
-    "f_screen:phone_screen_rapids_countepisodeunlock_norm:night",
-    "f_screen:phone_screen_rapids_sumdurationunlock_norm:night",
-    "f_screen:phone_screen_rapids_sumdurationunlock_locmap_home_norm:night",
+    'f_screen:phone_screen_rapids_countepisodeunlock:afternoon',
+    'f_screen:phone_screen_rapids_sumdurationunlock_locmap_greens:afternoon',
+    'f_screen:phone_screen_rapids_sumdurationunlock_locmap_living:afternoon',
+    'f_screen:phone_screen_rapids_sumdurationunlock_locmap_study:afternoon',
+    'f_screen:phone_screen_rapids_sumdurationunlock_locmap_home:afternoon',
+    'f_screen:phone_screen_rapids_countepisodeunlock:allday',
+    'f_screen:phone_screen_rapids_sumdurationunlock:allday',
+    'f_screen:phone_screen_rapids_sumdurationunlock_locmap_greens:allday',
+    'f_screen:phone_screen_rapids_sumdurationunlock_locmap_living:allday',
+    'f_screen:phone_screen_rapids_sumdurationunlock_locmap_study:allday',
+    'f_screen:phone_screen_rapids_sumdurationunlock_locmap_home:allday',
+    'f_screen:phone_screen_rapids_countepisodeunlock:evening',
+    'f_screen:phone_screen_rapids_sumdurationunlock:evening',
+    'f_screen:phone_screen_rapids_sumdurationunlock_locmap_living:evening',
+    'f_screen:phone_screen_rapids_sumdurationunlock_locmap_home:evening',
+    'f_screen:phone_screen_rapids_sumdurationunlock:morning',
+    'f_screen:phone_screen_rapids_sumdurationunlock_locmap_home:morning',
+    'f_screen:phone_screen_rapids_countepisodeunlock:night',
+    'f_screen:phone_screen_rapids_sumdurationunlock:night',
+    'f_screen:phone_screen_rapids_sumdurationunlock_locmap_living:night',
+    'f_screen:phone_screen_rapids_sumdurationunlock_locmap_home:night',
 ]
 
 steps_cols = [
-    "f_steps:fitbit_steps_intraday_rapids_sumsteps_norm:afternoon",
-    "f_steps:fitbit_steps_intraday_rapids_countepisodeactivebout_norm:afternoon",
-    "f_steps:fitbit_steps_intraday_rapids_sumdurationactivebout_norm:afternoon",
-    "f_steps:fitbit_steps_intraday_rapids_sumsteps_norm:allday",
-    "f_steps:fitbit_steps_intraday_rapids_countepisodeactivebout_norm:allday",
-    "f_steps:fitbit_steps_intraday_rapids_sumdurationactivebout_norm:allday",
-    "f_steps:fitbit_steps_intraday_rapids_sumsteps_norm:evening",
-    "f_steps:fitbit_steps_intraday_rapids_countepisodeactivebout_norm:evening",
-    "f_steps:fitbit_steps_intraday_rapids_sumdurationactivebout_norm:evening",
-    "f_steps:fitbit_steps_intraday_rapids_sumsteps_norm:morning",
-    "f_steps:fitbit_steps_intraday_rapids_countepisodeactivebout_norm:morning",
-    "f_steps:fitbit_steps_intraday_rapids_sumdurationactivebout_norm:morning",
-    "f_steps:fitbit_steps_intraday_rapids_sumsteps_norm:night",
-    "f_steps:fitbit_steps_intraday_rapids_countepisodeactivebout_norm:night",
-    "f_steps:fitbit_steps_intraday_rapids_sumdurationactivebout_norm:night",
+    'f_steps:fitbit_steps_intraday_rapids_sumsteps:afternoon',
+    'f_steps:fitbit_steps_intraday_rapids_countepisodeactivebout:afternoon',
+    'f_steps:fitbit_steps_intraday_rapids_countepisodeactivebout:allday',
+    'f_steps:fitbit_steps_intraday_rapids_sumdurationactivebout:allday',
+    'f_steps:fitbit_steps_intraday_rapids_sumsteps:evening',
+    'f_steps:fitbit_steps_intraday_rapids_sumdurationactivebout:evening',
+    'f_steps:fitbit_steps_intraday_rapids_countepisodeactivebout:morning',
+    'f_steps:fitbit_steps_intraday_rapids_sumsteps:night',
+    'f_steps:fitbit_steps_intraday_rapids_countepisodeactivebout:night',
+    'f_steps:fitbit_steps_intraday_rapids_sumdurationactivebout:night',
 ]
 
-# --- Input widgets ---
+# time features should be in range 1-31 for day and 1-12 for month with no floats values
+time = ['day', 'month']
+
+
+#--------------------- start fix here ---------------------
+# ['pid'] not included as input feature but always set as 0
+# --- Input widgets (two per row, inline) ---
 def input_section(label, cols):
-    st.subheader(label)
+    st.markdown(f"### {label}")
     inputs = {}
-    for c in cols:
-        inputs[c] = st.number_input(c, min_value=0.0, max_value=1.0, value=0.5, step=0.01)
+    num_cols = 2  # two inputs per row
+    rows = [cols[i:i + num_cols] for i in range(0, len(cols), num_cols)]
+
+    for row in rows:
+        c = st.columns(num_cols)
+        for idx, col_name in enumerate(row):
+            with c[idx]:
+                val = st.session_state.get(col_name, 0.5)
+                inputs[col_name] = st.number_input(
+                    col_name, min_value=0.0, max_value=1.0, value=val, step=0.01, key=col_name
+                )
     return inputs
 
-st.sidebar.header("🧮 Controls")
-randomize = st.sidebar.button("🎲 Randomize All")
-predict = st.sidebar.button("🔮 Predict Sleep Duration")
 
-st.markdown("### Input Your Daily Data")
+# --- Sidebar controls ---
+st.sidebar.header("Controls")
+randomize = st.sidebar.button("Randomize All")
+predict = st.sidebar.button("Predict Sleep Duration")
 
+# --- Input sections ---
 col1, col2, col3 = st.columns(3)
 
 with col1:
     sleep_inputs = input_section("Sleep", sleep_cols)
     bluetooth_inputs = input_section("Bluetooth", bluetooth_cols)
+    call_inputs = input_section("Call", call_cols)
 
 with col2:
     location_inputs = input_section("Location", location_cols)
@@ -139,14 +147,18 @@ with col3:
     screen_inputs = input_section("Screen", screen_cols)
     steps_inputs = input_section("Steps", steps_cols)
 
-# --- Combine all inputs ---
-all_inputs = {**sleep_inputs, **bluetooth_inputs, **location_inputs, **screen_inputs, **steps_inputs}
 
-# --- Randomize values ---
+# --- Randomize values (fix) ---
 if randomize:
-    for key in all_inputs:
-        st.session_state[key] = np.round(np.random.uniform(0.0, 1.0), 2)
+    for key in list(st.session_state.keys()):
+        if key not in ["Predict Sleep Duration", "🎲 Randomize All"]:
+            st.session_state[key] = np.round(np.random.uniform(0.0, 1.0), 2)
     st.experimental_rerun()
+
+
+# --- Combine all inputs ---
+all_inputs = {**sleep_inputs, **bluetooth_inputs, **call_inputs, **location_inputs, **screen_inputs, **steps_inputs}
+
 
 # --- Prediction ---
 if predict:
@@ -160,4 +172,3 @@ if predict:
     result_df = pd.DataFrame(results, columns=["Model", "Predicted Sleep Duration (hrs)", "Accuracy"])
     st.table(result_df)
     st.success("Prediction complete!")
-
