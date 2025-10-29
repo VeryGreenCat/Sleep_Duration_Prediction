@@ -5,17 +5,17 @@ import joblib
 
 # st.set_page_config(page_title="Sleep Duration Predictor", layout="wide")
 
-# st.title("Sleep Duration Prediction App")
-# st.markdown("Predict your sleep duration based on daily activity, location, and phone usage patterns.")
+st.title("Sleep Duration Prediction App")
+st.markdown("Predict your sleep duration based on daily activity, location, and phone usage patterns.")
 
 # --- Load models ---
 @st.cache_resource
 def load_models():
     models = {
-        "Linear Regression": {"model": joblib.load("model_lin.pkl"), "accuracy": 0.82},
-        "Random Forest": {"model": joblib.load("model_tree.pkl"), "accuracy": 0.85},
-        "XGBoost": {"model": joblib.load("model_xgb.pkl"), "accuracy": 0.87},
-        "MLP": {"model": joblib.load("model_mlp.pkl"), "accuracy": 0.86},
+        "Linear Regression": {"model": joblib.load("model_lin.pkl"), "accuracy": 0.062277},
+        "Random Forest": {"model": joblib.load("model_tree.pkl"), "accuracy": 0.048465},
+        "XGBoost": {"model": joblib.load("model_xgb.pkl"), "accuracy": 0.151053},
+        "MLP": {"model": joblib.load("model_mlp.pkl"), "accuracy": -0.693372},
     }
     return models
 
