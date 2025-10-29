@@ -132,7 +132,7 @@ randomize = st.sidebar.button("Randomize All")
 predict = st.sidebar.button("Predict Sleep Duration")
 
 # --- Input sections ---
-col1 = st.columns(1)
+col1, = st.columns(1)
 
 with col1:
     sleep_inputs = input_section("Sleep", sleep_cols)
