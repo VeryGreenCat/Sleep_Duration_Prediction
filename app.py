@@ -110,6 +110,11 @@ time = ['day', 'month']
 #--------------------- start fix here ---------------------
 # ['pid'] not included as input feature but always set as 0
 # --- Input widgets (two per row, inline) ---
+# --- Sidebar controls ---
+st.sidebar.header("Controls")
+randomize = st.sidebar.button("Randomize All")
+predict = st.sidebar.button("Predict Sleep Duration")
+
 def input_section(label, cols):
     st.markdown(f"### {label}")
     inputs = {}
@@ -138,15 +143,21 @@ def time_inputs():
         inputs['month'] = st.number_input("Month", min_value=1, max_value=12, value=val, step=1, key='month')
     return inputs
 
+# --- Randomize values first ---
+if randomize:
+    for key in sleep_cols + bluetooth_cols + call_cols + location_cols + screen_cols + steps_cols:
+        st.session_state[key] = np.round(np.random.uniform(0.0, 100.0), 2)
+    st.session_state['day'] = np.random.randint(1, 32)
+    st.session_state['month'] = np.random.randint(1, 13)
+    st.experimental_rerun()
+
+# --- Input sections after session_state is set ---
 time_input = time_inputs()
 
 # Always set pid to 0
 pid_input = {'pid': 0}
 
-# --- Sidebar controls ---
-st.sidebar.header("Controls")
-randomize = st.sidebar.button("Randomize All")
-predict = st.sidebar.button("Predict Sleep Duration")
+
 
 # --- Input sections ---
 col1, = st.columns(1)
@@ -162,18 +173,6 @@ with col1:
 # --- Combine all inputs ---
 all_inputs = {**pid_input, **time_input, **sleep_inputs, **bluetooth_inputs, **call_inputs,
               **location_inputs, **screen_inputs, **steps_inputs}
-
-# --- Randomize values ---
-if randomize:
-    for key in all_inputs:
-        if key not in ['pid']:  # pid stays 0
-            if key in ['day']:
-                st.session_state[key] = np.random.randint(1, 32)
-            elif key in ['month']:
-                st.session_state[key] = np.random.randint(1, 13)
-            else:
-                st.session_state[key] = np.round(np.random.uniform(0.0, 100.0), 2)
-    st.experimental_rerun()
 
 # --- Prediction ---
 if predict:
