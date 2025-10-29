@@ -113,7 +113,7 @@ time = ['day', 'month']
 def input_section(label, cols):
     st.markdown(f"### {label}")
     inputs = {}
-    num_cols = 2  # two inputs per row
+    num_cols = 3  # inputs per row
     rows = [cols[i:i + num_cols] for i in range(0, len(cols), num_cols)]
 
     for row in rows:
@@ -126,32 +126,26 @@ def input_section(label, cols):
                 )
     return inputs
 
-
 # --- Sidebar controls ---
 st.sidebar.header("Controls")
 randomize = st.sidebar.button("Randomize All")
 predict = st.sidebar.button("Predict Sleep Duration")
 
 # --- Input sections ---
-col1, col2, col3 = st.columns(3)
+col1 = st.columns(1)
 
 with col1:
     sleep_inputs = input_section("Sleep", sleep_cols)
     bluetooth_inputs = input_section("Bluetooth", bluetooth_cols)
     call_inputs = input_section("Call", call_cols)
-
-with col2:
     location_inputs = input_section("Location", location_cols)
-
-with col3:
     screen_inputs = input_section("Screen", screen_cols)
     steps_inputs = input_section("Steps", steps_cols)
 
-
-# --- Randomize values (fix) ---
+# --- Randomize values ---
 if randomize:
     for key in list(st.session_state.keys()):
-        if key not in ["Predict Sleep Duration", "🎲 Randomize All"]:
+        if key not in ["Predict Sleep Duration", "Randomize All"]:
             st.session_state[key] = np.round(np.random.uniform(0.0, 1.0), 2)
     st.experimental_rerun()
 
